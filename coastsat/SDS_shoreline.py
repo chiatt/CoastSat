@@ -768,7 +768,7 @@ def show_detection(im_ms, cloud_mask, im_labels, shoreline,image_epsg, georef,
         fig = plt.figure()
         fig.set_size_inches([18, 9])
         mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
+        # mng.window.showMaximized()
 
         # according to the image shape, decide whether it is better to have the images
         # in vertical subplots or horizontal subplots
