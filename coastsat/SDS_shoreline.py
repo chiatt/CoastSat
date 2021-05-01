@@ -9,6 +9,8 @@ Author: Kilian Vos, Water Research Laboratory, University of New South Wales
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from osgeo import gdal
+from gdalconst import *
 import pdb
 
 # image processing modules
@@ -36,6 +38,7 @@ from pylab import ginput
 # CoastSat modules
 from coastsat import SDS_tools, SDS_preprocess
 
+gdal.AllRegister()
 np.seterr(all='ignore') # raise/ignore divisions by 0 and nans
 
 # Main function for batch shoreline detection
@@ -143,7 +146,7 @@ def extract_shorelines(metadata, settings):
             # get image filename
             fn = SDS_tools.get_filenames(filenames[i],filepath, satname)
             # preprocess image (cloud mask + pansharpening/downsampling)
-            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata = SDS_preprocess.preprocess_single(fn, satname, settings['cloud_mask_issue'])
+            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata, im_proj = SDS_preprocess.preprocess_single(fn, satname, settings['cloud_mask_issue'])
             # get image spatial reference system (epsg code) from metadata dict
             image_epsg = metadata[satname]['epsg'][i]
             
@@ -244,6 +247,18 @@ def extract_shorelines(metadata, settings):
 
     # save outputput structure as output.pkl
     filepath = os.path.join(filepath_data, sitename)
+    driver = gdal.GetDriverByName('GTiff')
+    outfile = os.path.join(filepath, sitename + '_output.tiff')
+    try:
+        rows, cols = im_classif.shape
+        gdal_dtype = GDT_Float64
+        dst_ds = driver.Create(outfile, cols, rows, 1, GDT_Float64)
+        dst_ds.SetGeoTransform(georef)
+        dst_ds.SetProjection(im_proj)
+        out_band = dst_ds.GetRasterBand(1)
+        out_band.WriteArray(im_classif)
+    except Exception as e:
+        print("Unable to write geotiff", e)
     with open(os.path.join(filepath, sitename + '_output.pkl'), 'wb') as f:
         pickle.dump(output, f)
 
@@ -768,7 +783,7 @@ def show_detection(im_ms, cloud_mask, im_labels, shoreline,image_epsg, georef,
         fig = plt.figure()
         fig.set_size_inches([18, 9])
         mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
+        # mng.window.showMaximized()
 
         # according to the image shape, decide whether it is better to have the images
         # in vertical subplots or horizontal subplots

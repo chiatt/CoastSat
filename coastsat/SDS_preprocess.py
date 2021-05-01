@@ -79,6 +79,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # read all bands
         data = gdal.Open(fn, gdal.GA_ReadOnly)
         georef = np.array(data.GetGeoTransform())
+        im_proj = data.GetProjection()
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im_ms = np.stack(bands, 2)
 
@@ -132,6 +133,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # read pan image
         fn_pan = fn[0]
         data = gdal.Open(fn_pan, gdal.GA_ReadOnly)
+        im_proj = data.GetProjection()
         georef = np.array(data.GetGeoTransform())
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im_pan = np.stack(bands, 2)[:,:,0]
@@ -195,6 +197,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         fn_pan = fn[0]
         data = gdal.Open(fn_pan, gdal.GA_ReadOnly)
         georef = np.array(data.GetGeoTransform())
+        im_proj = data.GetProjection()
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im_pan = np.stack(bands, 2)[:,:,0]
 
@@ -205,6 +208,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # read ms image
         fn_ms = fn[1]
         data = gdal.Open(fn_ms, gdal.GA_ReadOnly)
+        im_proj = data.GetProjection()
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im_ms = np.stack(bands, 2)
 
@@ -255,6 +259,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # read 10m bands (R,G,B,NIR)
         fn10 = fn[0]
         data = gdal.Open(fn10, gdal.GA_ReadOnly)
+        im_proj = data.GetProjection()
         georef = np.array(data.GetGeoTransform())
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im10 = np.stack(bands, 2)
@@ -275,6 +280,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # read 20m band (SWIR1)
         fn20 = fn[1]
         data = gdal.Open(fn20, gdal.GA_ReadOnly)
+        im_proj = data.GetProjection()
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im20 = np.stack(bands, 2)
         im20 = im20[:,:,0]
@@ -291,6 +297,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # create cloud mask using 60m QA band (not as good as Landsat cloud cover)
         fn60 = fn[2]
         data = gdal.Open(fn60, gdal.GA_ReadOnly)
+        im_proj = data.GetProjection()
         bands = [data.GetRasterBand(k + 1).ReadAsArray() for k in range(data.RasterCount)]
         im60 = np.stack(bands, 2)
         im_QA = im60[:,:,0]
@@ -324,7 +331,7 @@ def preprocess_single(fn, satname, cloud_mask_issue):
         # the extra image is the 20m SWIR band
         im_extra = im20
 
-    return im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata
+    return im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata, im_proj
 
 
 ###################################################################################################
@@ -640,7 +647,7 @@ def save_jpg(metadata, settings, **kwargs):
             # image filename
             fn = SDS_tools.get_filenames(filenames[i],filepath, satname)
             # read and preprocess image
-            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata = preprocess_single(fn, satname, settings['cloud_mask_issue'])
+            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata, im_proj = preprocess_single(fn, satname, settings['cloud_mask_issue'])
             # calculate cloud cover
             cloud_cover = np.divide(sum(sum(cloud_mask.astype(int))),
                                     (cloud_mask.shape[0]*cloud_mask.shape[1]))
@@ -725,13 +732,13 @@ def get_reference_sl(metadata, settings):
         # create figure
         fig, ax = plt.subplots(1,1, figsize=[18,9], tight_layout=True)
         mng = plt.get_current_fig_manager()
-        mng.window.showMaximized()
+        # mng.window.showMaximized()
         # loop trhough the images
         for i in range(len(filenames)):
 
             # read image
             fn = SDS_tools.get_filenames(filenames[i],filepath, satname)
-            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata = preprocess_single(fn, satname, settings['cloud_mask_issue'])
+            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata, im_proj = preprocess_single(fn, satname, settings['cloud_mask_issue'])
 
             # calculate cloud cover
             cloud_cover = np.divide(sum(sum(cloud_mask.astype(int))),

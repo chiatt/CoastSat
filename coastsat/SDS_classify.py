@@ -118,7 +118,7 @@ def label_images(metadata,settings):
             # image filename
             fn = SDS_tools.get_filenames(filenames[i],filepath, satname)
             # read and preprocess image
-            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata = SDS_preprocess.preprocess_single(fn, satname, settings['cloud_mask_issue'])
+            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata, im_proj = SDS_preprocess.preprocess_single(fn, satname, settings['cloud_mask_issue'])
             # calculate cloud cover
             cloud_cover = np.divide(sum(sum(cloud_mask.astype(int))),
                                     (cloud_mask.shape[0]*cloud_mask.shape[1]))
@@ -557,7 +557,7 @@ def evaluate_classifier(classifier, metadata, settings):
             # image filename
             fn = SDS_tools.get_filenames(filenames[i],filepath, satname)
             # read and preprocess image
-            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata = SDS_preprocess.preprocess_single(fn, satname, settings['cloud_mask_issue'])
+            im_ms, georef, cloud_mask, im_extra, im_QA, im_nodata, im_proj = SDS_preprocess.preprocess_single(fn, satname, settings['cloud_mask_issue'])
             image_epsg = metadata[satname]['epsg'][i]
             # calculate cloud cover
             cloud_cover = np.divide(sum(sum(cloud_mask.astype(int))),
