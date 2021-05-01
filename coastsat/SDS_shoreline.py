@@ -9,6 +9,8 @@ Author: Kilian Vos, Water Research Laboratory, University of New South Wales
 import os
 import numpy as np
 import matplotlib.pyplot as plt
+from osgeo import gdal
+from gdalconst import *
 import pdb
 
 # image processing modules
@@ -36,6 +38,7 @@ from pylab import ginput
 # CoastSat modules
 from coastsat import SDS_tools, SDS_preprocess
 
+gdal.AllRegister()
 np.seterr(all='ignore') # raise/ignore divisions by 0 and nans
 
 # Main function for batch shoreline detection
@@ -244,6 +247,18 @@ def extract_shorelines(metadata, settings):
 
     # save outputput structure as output.pkl
     filepath = os.path.join(filepath_data, sitename)
+    driver = gdal.GetDriverByName('GTiff')
+    outfile = os.path.join(filepath, sitename + '_output.tiff')
+    try:
+        rows, cols = im_classif.shape
+        gdal_dtype = GDT_Float64
+        dst_ds = driver.Create(outfile, cols, rows, 1, GDT_Float64)
+        dst_ds.SetGeoTransform(georef)
+        dst_ds.SetProjection(im_proj)
+        out_band = dst_ds.GetRasterBand(1)
+        out_band.WriteArray(im_classif)
+    except Exception as e:
+        print("Unable to write geotiff", e)
     with open(os.path.join(filepath, sitename + '_output.pkl'), 'wb') as f:
         pickle.dump(output, f)
 
